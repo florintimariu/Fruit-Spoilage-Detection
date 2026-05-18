@@ -1,0 +1,25 @@
+@host = http://localhost:5056
+
+### Test simplu - POST step
+POST {{host}}/api/shipments/test-shipment-001/steps
+Content-Type: application/json
+
+{
+  "stepId": "step-001",
+  "startTime": "2026-05-14T10:30:00Z",
+  "minTemp": 2.5,
+  "maxTemp": 4.0,
+  "aiStatus": "fresh"
+}
+
+### Test cu altă temperatură
+POST {{host}}/api/shipments/test-shipment-001/steps
+Content-Type: application/json
+
+{
+  "stepId": "step-002",
+  "startTime": "2026-05-14T11:00:00Z",
+  "minTemp": 6.0,
+  "maxTemp": 8.5,
+  "aiStatus": "warning"
+}
