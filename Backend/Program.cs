@@ -1,81 +1,72 @@
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Firestore;
-using Microsoft.AspNetCore.Mvc;
 using Nethereum.Web3;
-using Nethereum.ABI.FunctionEncoding.Attributes;
-using Nethereum.Contracts;
-using Nethereum.Hex.HexTypes;
-using Nethereum.Util;
-using System.Text;
-using System.Numerics;
+using Backend.Middleware;
+using Backend.Services.Interfaces;
+using Backend.Services.Implementations;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Firebase setup
-string filepath = "firebase-service-account-key.json";
-Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", filepath);
-string projectId = "florin-timariu-licenta";
-builder.Services.AddSingleton<FirestoreDb>(FirestoreDb.Create(projectId));
+// === Firebase setup ===
+var firebaseProjectId = builder.Configuration["Firebase:ProjectId"]!;
+var credentialsPath = builder.Configuration["Firebase:CredentialsPath"]!;
 
-// Ethereum setup
-string contractAddress = builder.Configuration["Ethereum:ContractAddress"]!;
-string rpcUrl = builder.Configuration["Ethereum:RpcUrl"]!;
-string privateKey = builder.Configuration["Ethereum:PrivateKey"]!;
+Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", credentialsPath);
 
-var web3 = new Web3(rpcUrl);
+// Initialize Firebase Admin SDK (needed for Auth)
+FirebaseApp.Create(new AppOptions
+{
+    Credential = GoogleCredential.GetApplicationDefault(),
+    ProjectId = firebaseProjectId
+});
+
+builder.Services.AddSingleton<FirestoreDb>(FirestoreDb.Create(firebaseProjectId));
+
+// === Ethereum setup ===
+var contractAddress = builder.Configuration["Ethereum:ContractAddress"]!;
+var rpcUrl = builder.Configuration["Ethereum:RpcUrl"]!;
+var privateKey = builder.Configuration["Ethereum:PrivateKey"]!;
+
 var account = new Nethereum.Web3.Accounts.Account(privateKey);
-web3.TransactionManager.UseLegacyAsDefault = true; // For Sepolia
+var web3 = new Web3(account, rpcUrl);
+builder.Services.AddSingleton(web3);
+
+// === Services ===
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IFirestoreService, FirestoreService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IOrganizationService, OrganizationService>();
+
+// === API setup ===
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-app.MapPost("/api/shipments/{shipmentId}/steps", async (
-    string shipmentId,
-    [FromBody] ShipmentStep stepData,
-    FirestoreDb db) =>
+// === Middleware pipeline ===
+if (app.Environment.IsDevelopment())
 {
-    try
-    {
-        // 1. Compute hash of the stepData (serialize to JSON or use a canonical representation)
-        string json = System.Text.Json.JsonSerializer.Serialize(stepData);
-        byte[] hashBytes = Sha3Keccack.Current.CalculateHash(Encoding.UTF8.GetBytes(json));
-        // Alternatively use SHA256 if you prefer, but Ethereum uses Keccak256 for bytes32
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
-        // 2. Send transaction to smart contract
-        var logStepFunction = new LogStepFunction
-        {
-            ShipmentId = shipmentId,
-            StepId = stepData.StepId,
-            AiStatus = stepData.AiStatus,
-            DataHash = hashBytes
-        };
+app.UseMiddleware<FirebaseAuthMiddleware>();
 
-        // Build web3 with account for signing
-        var web3WithAccount = new Web3(account, rpcUrl);
+// === Endpoints ===
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
-        var handler = web3WithAccount.Eth.GetContractTransactionHandler<LogStepFunction>();
-        var transactionReceipt = await handler.SendRequestAndWaitForReceiptAsync(
-            contractAddress,
-            logStepFunction
-        );
+app.MapGet("/dev/get-token/{userId}", async (string userId) =>
+{
+    var customToken = await FirebaseAdmin.Auth.FirebaseAuth.DefaultInstance
+        .CreateCustomTokenAsync(userId);
+    return Results.Ok(new { customToken });
+});
 
-        Console.WriteLine($"Transaction hash: {transactionReceipt.TransactionHash}");
-
-        // 3. Write to Firestore
-        CollectionReference stepsCollection = db.Collection("Shipments")
-                                                .Document(shipmentId)
-                                                .Collection("Steps");
-        DocumentReference newDoc = await stepsCollection.AddAsync(stepData);
-
-        return Results.Ok(new
-        {
-            Message = "Step successfully written to Firestore and anchored on-chain!",
-            DocumentId = newDoc.Id,
-            TransactionHash = transactionReceipt.TransactionHash
-        });
-    }
-    catch (Exception ex)
-    {
-        return Results.Problem($"Failed: {ex.Message}");
-    }
+app.MapGet("/api/me", (HttpContext ctx) =>
+{
+    var userId = ctx.Items["UserId"] as string;
+    return Results.Ok(new { userId });
 });
 
 app.Run();
