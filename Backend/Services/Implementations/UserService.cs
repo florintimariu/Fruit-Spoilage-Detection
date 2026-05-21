@@ -1,6 +1,7 @@
 using Google.Cloud.Firestore;
 using Backend.Models;
 using Backend.Services.Interfaces;
+using FirebaseAdmin.Auth;
 
 namespace Backend.Services.Implementations;
 
@@ -70,4 +71,18 @@ public class UserService : IUserService
             });
         }
     }
+
+    public async Task<UserInfo?> GetUserByEmailAsync(string email)
+{
+    try
+    {
+        var user = await FirebaseAdmin.Auth.FirebaseAuth.DefaultInstance
+            .GetUserByEmailAsync(email);
+        return new UserInfo(user.Uid, user.Email, user.DisplayName ?? "");
+    }
+    catch (FirebaseAdmin.Auth.FirebaseAuthException)
+    {
+        return null;
+    }
+}
 }

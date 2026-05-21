@@ -8,4 +8,5 @@ public interface IUserService
     Task<User> CreateOrGetUserAsync(string userId, string email, string? displayName);
     Task UpdateLastLoginAsync(string userId);
     Task AddOrganizationToUserAsync(string userId, string organizationId);
+    Task<UserInfo?> GetUserByEmailAsync(string email);
 }
