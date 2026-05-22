@@ -1,6 +1,8 @@
 using Nethereum.ABI.FunctionEncoding.Attributes;
 using Nethereum.Contracts;
 
+namespace Backend.Contracts;
+
 [Function("logStep")]
 public class LogStepFunction : FunctionMessage
 {
