@@ -13,12 +13,25 @@ public class FirebaseAuthMiddleware
 
     public async Task InvokeAsync(HttpContext context, IAuthService authService, IUserService userService)
     {
-        var path = context.Request.Path.Value ?? "";
-        if (path.StartsWith("/health") || path.StartsWith("/swagger") || path.StartsWith("/dev/"))
+        var env = context.RequestServices.GetRequiredService<IWebHostEnvironment>();
+        if (env.IsEnvironment("Testing"))
         {
-            await _next(context);
-            return;
+            var testUserId = context.Request.Headers["X-Test-User-Id"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(testUserId))
+            {
+                context.Items["UserId"] = testUserId;
+                await _next(context);
+                return;
+            }
+            
+            var path = context.Request.Path.Value ?? "";
+            if (path.StartsWith("/health") || path.StartsWith("/swagger") || path.StartsWith("/dev/"))
+            {
+                await _next(context);
+                return;
+            }
         }
+
 
         var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
         if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
@@ -38,7 +51,6 @@ public class FirebaseAuthMiddleware
             return;
         }
 
-        // Auto-create user dacă nu exista
         await userService.CreateOrGetUserAsync(userInfo.UserId, userInfo.Email, userInfo.DisplayName);
         await userService.UpdateLastLoginAsync(userInfo.UserId);
 
