@@ -1,0 +1,131 @@
+### ============================================
+### SETUP — Creeaza date pentru JMeter
+### ============================================
+
+### 0. Creeaza userul in emulator (PRIMUL request)
+POST http://localhost:5056/api/me/fcm-token
+X-Test-User-Id: JLarTgVrk7TX9OKXcL9Nt6qhv4K2
+Content-Type: application/json
+
+{
+  "fcmToken": "fake-token-jmeter"
+}
+
+### 1. Creeaza Org 1
+POST http://localhost:5056/api/organizations
+X-Test-User-Id: JLarTgVrk7TX9OKXcL9Nt6qhv4K2
+Content-Type: application/json
+
+{
+  "name": "Ferma Testarii",
+  "description": "Org 1 pentru load testing"
+}
+
+###
+
+### 2. Creeaza Org 2
+POST http://localhost:5056/api/organizations
+X-Test-User-Id: JLarTgVrk7TX9OKXcL9Nt6qhv4K2
+Content-Type: application/json
+
+{
+  "name": "Depozit Central",
+  "description": "Org 2 pentru load testing"
+}
+
+###
+
+### 3. Creeaza Shipment 1 (pune orgId din raspunsul de la Org 1)
+POST http://localhost:5056/api/shipments
+X-Test-User-Id: JLarTgVrk7TX9OKXcL9Nt6qhv4K2
+Content-Type: application/json
+
+{
+  "organizationId": "ab669b95-fe1e-47f0-8c22-3423bac8bef8",
+  "productName": "Mere Golden",
+  "productDescription": "10 lazi",
+  "origin": "Cluj",
+  "destination": "Bucuresti"
+}
+
+###
+
+### 4. Creeaza Shipment 2
+POST http://localhost:5056/api/shipments
+X-Test-User-Id: JLarTgVrk7TX9OKXcL9Nt6qhv4K2
+Content-Type: application/json
+
+{
+  "organizationId": "ab669b95-fe1e-47f0-8c22-3423bac8bef8",
+  "productName": "Pere Williams",
+  "productDescription": "5 lazi",
+  "origin": "Timisoara",
+  "destination": "Iasi"
+}
+
+###
+
+### 5. Creeaza Shipment 3
+POST http://localhost:5056/api/shipments
+X-Test-User-Id: JLarTgVrk7TX9OKXcL9Nt6qhv4K2
+Content-Type: application/json
+
+{
+  "organizationId": "ab669b95-fe1e-47f0-8c22-3423bac8bef8",
+  "productName": "Banane",
+  "productDescription": "Import Ecuador",
+  "origin": "Constanta",
+  "destination": "Cluj"
+}
+
+###
+
+### 6. Creeaza Shipment 4
+POST http://localhost:5056/api/shipments
+X-Test-User-Id: JLarTgVrk7TX9OKXcL9Nt6qhv4K2
+Content-Type: application/json
+
+{
+  "organizationId": "fafcd4cb-6711-496b-ae3e-e2f45f56e97f",
+  "productName": "Capsuni",
+  "productDescription": "Productie locala",
+  "origin": "Sibiu",
+  "destination": "Brasov"
+}
+
+###
+
+### 7. Creeaza Shipment 5
+POST http://localhost:5056/api/shipments
+X-Test-User-Id: JLarTgVrk7TX9OKXcL9Nt6qhv4K2
+Content-Type: application/json
+
+{
+  "organizationId": "fafcd4cb-6711-496b-ae3e-e2f45f56e97f",
+  "productName": "Struguri",
+  "productDescription": "Cramele Recas",
+  "origin": "Timisoara",
+  "destination": "Bucuresti"
+}
+
+###
+
+### ============================================
+### VERIFICARE — Confirma ca datele exista
+### ============================================
+
+### GET Organizations — ar trebui sa returneze 2
+GET http://localhost:5056/api/organizations
+X-Test-User-Id: JLarTgVrk7TX9OKXcL9Nt6qhv4K2
+
+###
+
+### GET Shipments Org 1 — ar trebui sa returneze 3
+GET http://localhost:5056/api/shipments?organizationId=ab669b95-fe1e-47f0-8c22-3423bac8bef8
+X-Test-User-Id: JLarTgVrk7TX9OKXcL9Nt6qhv4K2
+
+###
+
+### GET Shipments Org 2 — ar trebui sa returneze 2
+GET http://localhost:5056/api/shipments?organizationId=fafcd4cb-6711-496b-ae3e-e2f45f56e97f
+X-Test-User-Id: JLarTgVrk7TX9OKXcL9Nt6qhv4K2
