@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "989797890506",
+    "project_id": "florin-timariu-licenta",
+    "storage_bucket": "florin-timariu-licenta.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:989797890506:android:b648a1a65414db59533733",
+        "android_client_info": {
+          "package_name": "florin.timariu.freshledger"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDizddSfOPAKuvXZ809EEBnxGpvAZTuD8U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
