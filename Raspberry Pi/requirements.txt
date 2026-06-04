@@ -1,0 +1,9 @@
+requests
+paho-mqtt
+pyserial
+pynmea2
+opencv-python
+torch
+torchvision
+numpy
+git+https://github.com/facebookresearch/segment-anything.git
